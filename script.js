@@ -1,166 +1,172 @@
+// ===== 1. Elemente aus dem HTML holen =====
+var formular = document.getElementById("zeitFormular");
+var ergebnisBereich = document.getElementById("ergebnisBereich");
+var eintragsListe = document.getElementById("eintragsListe");
+var loeschenButton = document.getElementById("loeschenButton");
 
-// Elemente aus dem HTML holen
-const formular = document.getElementById("zeitFormular");
-const ergebnisBereich = document.getElementById("ergebnisBereich");
-const eintragsListe = document.getElementById("eintragsListe");
-const loeschenButton = document.getElementById("loeschenButton");
 
-// Gespeicherte Einträge aus dem Browser laden
-let eintraege = JSON.parse(localStorage.getItem("arbeitszeiten")) || [];
+// ===== 2. Gespeicherte Einträge laden =====
+// Alle Einträge sind in dieser Liste (Array)
+var eintraege = [];
 
-// Einträge anzeigen, wenn die Seite geöffnet wird
+var gespeichert = localStorage.getItem("arbeitszeiten");
+if (gespeichert !== null) {
+    eintraege = JSON.parse(gespeichert);
+}
+
+// Beim Öffnen der Seite die Einträge anzeigen
 zeigeEintraege();
 
-// Formular wird abgeschickt
+
+// ===== 3. Wenn das Formular abgeschickt wird =====
 formular.addEventListener("submit", function (event) {
+    // Verhindert, dass die Seite neu lädt
     event.preventDefault();
 
-    const name = document.getElementById("mitarbeiter").value.trim();
-    const datum = document.getElementById("datum").value;
-    const beginn = document.getElementById("beginn").value;
-    const ende = document.getElementById("ende").value;
-    const pause = Number(document.getElementById("pause").value);
+    // Werte aus dem Formular lesen
+    var name = document.getElementById("mitarbeiter").value;
+    var datum = document.getElementById("datum").value;
+    var beginn = document.getElementById("beginn").value;
+    var ende = document.getElementById("ende").value;
+    var pause = Number(document.getElementById("pause").value);
 
-    // Prüfen, ob die Eingaben sinnvoll sind
-    if (name === "") {
+    // Eingaben prüfen
+    if (name.trim() === "") {
         zeigeFehler("Bitte gib einen Namen ein.");
         return;
     }
 
-    if (beginn === "" || ende === "" || datum === "") {
+    if (datum === "" || beginn === "" || ende === "") {
         zeigeFehler("Bitte fülle alle Felder aus.");
         return;
     }
 
-    if (pause < 0 || !Number.isFinite(pause)) {
+    if (isNaN(pause) || pause < 0) {
         zeigeFehler("Die Pause darf nicht negativ sein.");
         return;
     }
 
     // Uhrzeiten in Minuten umrechnen
-    const beginnTeile = beginn.split(":");
-    const endeTeile = ende.split(":");
-
-    const beginnMinuten =
-        Number(beginnTeile[0]) * 60 + Number(beginnTeile[1]);
-
-    const endeMinuten =
-        Number(endeTeile[0]) * 60 + Number(endeTeile[1]);
+    var beginnMinuten = zeitInMinuten(beginn);
+    var endeMinuten = zeitInMinuten(ende);
 
     if (endeMinuten <= beginnMinuten) {
-        zeigeFehler(
-            "Das Arbeitsende muss nach dem Arbeitsbeginn liegen."
-        );
+        zeigeFehler("Das Arbeitsende muss nach dem Arbeitsbeginn liegen.");
         return;
     }
 
-    const dauerMinuten = endeMinuten - beginnMinuten - pause;
+    // Arbeitszeit berechnen
+    var dauer = endeMinuten - beginnMinuten - pause;
 
-    if (dauerMinuten <= 0) {
+    if (dauer <= 0) {
         zeigeFehler("Die Pause ist länger als die Arbeitszeit.");
         return;
     }
 
-    const stunden = Math.floor(dauerMinuten / 60);
-    const minuten = dauerMinuten % 60;
+    var stunden = Math.floor(dauer / 60);
+    var minuten = dauer % 60;
+    var anzeige = stunden + " Std. " + minuten + " Min.";
 
-    const stundenAnzeige = stunden + " Std. " + minuten + " Min.";
-
-    const neuerEintrag = {
-        name: name,
+    // Neuen Eintrag erstellen und speichern
+    var neuerEintrag = {
+        name: name.trim(),
         datum: datum,
         beginn: beginn,
         ende: ende,
         pause: pause,
-        arbeitszeit: dauerMinuten,
-        anzeige: stundenAnzeige
+        anzeige: anzeige
     };
 
     eintraege.push(neuerEintrag);
-
-    // Einträge im Browser speichern
     localStorage.setItem("arbeitszeiten", JSON.stringify(eintraege));
 
-    ergebnisBereich.className = "karte ergebnis ergebnis-erfolg";
+    // Ergebnis anzeigen
+    zeigeErgebnis(neuerEintrag);
 
-    ergebnisBereich.innerHTML = `
-        <h2>Dein Ergebnis</h2>
-        <p><strong>${sichererText(name)}</strong> · ${datum}</p>
-        <p>Arbeitsbeginn: ${beginn} Uhr</p>
-        <p>Arbeitsende: ${ende} Uhr</p>
-        <p>Pause: ${pause} Minuten</p>
-        <p>Effektive Arbeitszeit:</p>
-        <p class="grosse-zeit">${stundenAnzeige}</p>
-    `;
-
+    // Liste neu anzeigen und Formular leeren
     zeigeEintraege();
     formular.reset();
-
     document.getElementById("pause").value = 60;
 });
 
-function zeigeFehler(text) {
-    ergebnisBereich.className = "karte ergebnis";
 
-    ergebnisBereich.innerHTML = `
-        <h2>Dein Ergebnis</h2>
-        <p class="fehlermeldung">${text}</p>
-    `;
-}
-
-function zeigeEintraege() {
-    if (eintraege.length === 0) {
-        eintragsListe.innerHTML =
-            "<p>Noch keine Einträge vorhanden.</p>";
-        return;
-    }
-
-    eintragsListe.innerHTML = "";
-
-    for (let i = eintraege.length - 1; i >= 0; i--) {
-        const eintrag = eintraege[i];
-        const zeile = document.createElement("div");
-
-        zeile.className = "eintrag";
-
-        const nameZeile = document.createElement("p");
-        nameZeile.textContent = eintrag.name + " · " + eintrag.datum;
-
-        const zeitZeile = document.createElement("p");
-        zeitZeile.textContent =
-            eintrag.beginn + "–" + eintrag.ende
-            + " Uhr · Pause: " + eintrag.pause + " Min.";
-
-        const dauerZeile = document.createElement("p");
-        dauerZeile.textContent =
-            "Arbeitszeit: " + eintrag.anzeige;
-
-        zeile.appendChild(nameZeile);
-        zeile.appendChild(zeitZeile);
-        zeile.appendChild(dauerZeile);
-
-        eintragsListe.appendChild(zeile);
-    }
-}
-
+// ===== 4. Button "Alle löschen" =====
 loeschenButton.addEventListener("click", function () {
     eintraege = [];
-
     localStorage.removeItem("arbeitszeiten");
     zeigeEintraege();
 
     ergebnisBereich.className = "karte ergebnis";
-
-    ergebnisBereich.innerHTML = `
-        <h2>Dein Ergebnis</h2>
-        <p>Alle gespeicherten Einträge wurden gelöscht.</p>
-    `;
+    ergebnisBereich.innerHTML = "<h2>Dein Ergebnis</h2>";
+    ergebnisBereich.appendChild(
+        neuerAbsatz("Alle gespeicherten Einträge wurden gelöscht.", "")
+    );
 });
 
-// Sonderzeichen im Namen sicher als Text anzeigen
-function sichererText(text) {
-    const element = document.createElement("span");
-    element.textContent = text;
 
-    return element.innerHTML;
+// ===== 5. Hilfsfunktionen =====
+
+// Rechnet "08:30" in Minuten um (= 510)
+function zeitInMinuten(zeit) {
+    var teile = zeit.split(":");
+    var stunden = Number(teile[0]);
+    var minuten = Number(teile[1]);
+    return stunden * 60 + minuten;
+}
+
+// Erstellt einen Absatz <p> mit Text und optionaler Klasse
+function neuerAbsatz(text, klasse) {
+    var p = document.createElement("p");
+    p.textContent = text;
+    if (klasse !== "") {
+        p.className = klasse;
+    }
+    return p;
+}
+
+// Zeigt eine Fehlermeldung im Ergebnis-Bereich
+function zeigeFehler(text) {
+    ergebnisBereich.className = "karte ergebnis";
+    ergebnisBereich.innerHTML = "<h2>Dein Ergebnis</h2>";
+    ergebnisBereich.appendChild(neuerAbsatz(text, "fehlermeldung"));
+}
+
+// Zeigt das Ergebnis im Ergebnis-Bereich
+function zeigeErgebnis(eintrag) {
+    ergebnisBereich.className = "karte ergebnis ergebnis-erfolg";
+    ergebnisBereich.innerHTML = "<h2>Dein Ergebnis</h2>";
+
+    ergebnisBereich.appendChild(neuerAbsatz(eintrag.name + " · " + eintrag.datum, ""));
+    ergebnisBereich.appendChild(neuerAbsatz("Arbeitsbeginn: " + eintrag.beginn + " Uhr", ""));
+    ergebnisBereich.appendChild(neuerAbsatz("Arbeitsende: " + eintrag.ende + " Uhr", ""));
+    ergebnisBereich.appendChild(neuerAbsatz("Pause: " + eintrag.pause + " Minuten", ""));
+    ergebnisBereich.appendChild(neuerAbsatz("Effektive Arbeitszeit:", ""));
+    ergebnisBereich.appendChild(neuerAbsatz(eintrag.anzeige, "grosse-zeit"));
+}
+
+// Zeigt alle gespeicherten Einträge (neuester zuerst)
+function zeigeEintraege() {
+    if (eintraege.length === 0) {
+        eintragsListe.innerHTML = "<p>Noch keine Einträge vorhanden.</p>";
+        return;
+    }
+
+    // Liste leeren
+    eintragsListe.innerHTML = "";
+
+    // Von hinten nach vorne durchgehen
+    for (var i = eintraege.length - 1; i >= 0; i--) {
+        var eintrag = eintraege[i];
+
+        var zeile = document.createElement("div");
+        zeile.className = "eintrag";
+
+        zeile.appendChild(neuerAbsatz(eintrag.name + " · " + eintrag.datum, ""));
+        zeile.appendChild(neuerAbsatz(
+            eintrag.beginn + "–" + eintrag.ende + " Uhr · Pause: " + eintrag.pause + " Min.", ""
+        ));
+        zeile.appendChild(neuerAbsatz("Arbeitszeit: " + eintrag.anzeige, ""));
+
+        eintragsListe.appendChild(zeile);
+    }
 }
