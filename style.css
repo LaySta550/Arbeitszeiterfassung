@@ -13,7 +13,7 @@ body {
 }
 
 header {
-    background-color: #193b70;
+    background-color: #314361;
     color: white;
     text-align: center;
     padding: 30px 15px;
@@ -67,7 +67,7 @@ input {
 }
 
 button {
-    background-color: #2163b5;
+    background-color: #374a61;
     color: white;
     border: none;
     border-radius: 5px;
@@ -78,11 +78,11 @@ button {
 }
 
 button:hover {
-    background-color: #164783;
+    background-color: #656d77;
 }
 
 .sekundaer {
-    background-color: #687589;
+    background-color: #5e2311;
     margin-top: 0;
 }
 
