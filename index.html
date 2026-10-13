@@ -1,0 +1,75 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arbeitszeiterfassung</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Arbeitszeiterfassung</h1>
+    </header>
+
+    <main>
+        <section class="karte">
+            <h2>Arbeitszeit eintragen</h2>
+
+            <form id="zeitFormular">
+                <label for="mitarbeiter">Name des Mitarbeitenden</label>
+                <input type="text" id="mitarbeiter"
+                       placeholder="z. B. Max Muster" required>
+
+                <label for="datum">Datum</label>
+                <input type="date" id="datum" required>
+
+                <div class="zeitreihe">
+                    <div>
+                        <label for="beginn">Arbeitsbeginn</label>
+                        <input type="time" id="beginn" required>
+                    </div>
+
+                    <div>
+                        <label for="ende">Arbeitsende</label>
+                        <input type="time" id="ende" required>
+                    </div>
+                </div>
+
+                <label for="pause">Pause in Minuten</label>
+                <input type="number" id="pause" min="0"
+                       value="60" required>
+
+                <button type="submit">Arbeitszeit berechnen</button>
+            </form>
+        </section>
+
+        <section class="karte ergebnis" id="ergebnisBereich">
+            <h2>Dein Ergebnis</h2>
+            <p>Fülle das Formular aus und berechne deine Arbeitszeit.</p>
+        </section>
+
+        <section class="karte">
+            <div class="listen-kopf">
+                <h2>Gespeicherte Einträge</h2>
+                <button type="button" id="loeschenButton"
+                        class="sekundaer">Alle löschen</button>
+            </div>
+
+            <p class="klein">
+                Die Einträge bleiben in diesem Browser gespeichert.
+            </p>
+
+            <div id="eintragsListe">
+                <p>Noch keine Einträge vorhanden.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Layla Stanesic und Fabrice Ferarro · M431</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
